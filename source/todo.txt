@@ -1,0 +1,46 @@
+SafetyHookInline g_hookCEventGunShot{};
+void* __fastcall CEventGunShot_constructor(void* thisptr, void*, CEntity* entity, CVector startPoint, CVector endPoint, bool bHasNoSound)
+{
+	const auto return_address = reinterpret_cast<std::uint32_t>(_ReturnAddress());
+
+	//g_Debug.print("[egs] who: 0x%X | ra: 0x%X", entity, return_address);
+
+	g_Debug.shot(startPoint, endPoint);
+	g_Debug.print("[egs] who: 0x%X | ra: 0x%X | end: %f %f %f",
+		entity, return_address, endPoint.x, endPoint.y, endPoint.z);
+
+	const auto aimbot_target = utils::find_ped_to_attack();
+	if (aimbot_target)
+		endPoint = utils::get_bone_position(aimbot_target, BONE_HEAD2);
+
+	auto ret = g_hookCEventGunShot.thiscall<void*>(thisptr, entity, startPoint, endPoint, bHasNoSound);
+
+	return ret;
+}
+
+SafetyHookInline g_hookCEventGunShotWhizzedBy{};
+void* __fastcall CEventGunShotWhizzedBy_constructor(void* thisptr, void*, CEntity* entity, CVector& startPoint, CVector& endPoint, bool bHasNoSound)
+{
+	auto ret = g_hookCEventGunShotWhizzedBy.thiscall<void*>(thisptr, entity, startPoint, endPoint, bHasNoSound);
+
+	//g_Debug.print("[egswb] who: 0x%X | sound: %d | start: %f %f %f | end: %f %f %f",
+	//	entity, bHasNoSound, startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z);
+
+	return ret;
+}
+
+g_hookCEventGunShot = safetyhook::create_inline(0x4AC610, CEventGunShot_constructor);
+g_hookCEventGunShotWhizzedBy = safetyhook::create_inline(0x4B1FD0, CEventGunShotWhizzedBy_constructor);
+
+/*
+auto front = TheCamera.m_aCams[TheCamera.m_nActiveCam].m_vecFront;
+auto source = TheCamera.m_aCams[TheCamera.m_nActiveCam].m_vecSource;
+
+CVector velocity = front;
+velocity.Normalise();
+velocity *= 16.0f;
+CVector targetPoint = velocity * 40.0f + source;
+
+CEventGunShot gs(shooter, activeCam.m_vecSource, targetPoint, hasNoSound);
+CEventGunShotWhizzedBy gsw(shooter, activeCam.m_vecSource, targetPoint, hasNoSound);
+*/

@@ -1,0 +1,593 @@
+/- dynamic esp box -/
+	// on render:
+		// dynamic box. looks bad in gta:sa.
+		// credits: dude719 (https://www.unknowncheats.me/forum/counterstrike-global-offensive/124388-bounding-esp-boxes.html)
+		auto make_box(CPed* ped) -> CRect
+		{
+			static auto vector_dot = [&](const CVector& in, const CVector& v) -> float {
+				return (in.x * v.x + in.y * v.y + in.z * v.z);
+			};
+			static auto vector_transform = [&](const CVector& in, const CMatrix* mat, CVector& out) -> void {
+				out.x = vector_dot(in, mat->right) + mat->pos.x;
+				out.y = vector_dot(in, mat->up) + mat->pos.y;
+				out.z = vector_dot(in, mat->at) + mat->pos.z;
+			};
+
+			auto col_model = ped->GetColModel();
+			if (!col_model)
+				return;
+
+			const auto mins = col_model->m_boundBox.m_vecMin, maxs = col_model->m_boundBox.m_vecMax;
+
+			const auto& transform = ped->GetMatrix();
+
+			CVector points[] =
+			{
+				{ mins.x, mins.y, mins.z },
+				{ mins.x, maxs.y, mins.z },
+				{ maxs.x, maxs.y, mins.z },
+				{ maxs.x, mins.y, mins.z },
+				{ maxs.x, maxs.y, maxs.z },
+				{ mins.x, maxs.y, maxs.z },
+				{ mins.x, mins.y, maxs.z },
+				{ maxs.x, mins.y, maxs.z },
+			};
+
+			CVector transformed[8];
+
+			for (int i = 0; i < 8; i++)
+				vector_transform(points[i], transform, transformed[i]);
+
+			CVector2D flb, brt, blb, frt, frb, brb, blt, flt;
+
+			if (!utils::world_to_screen(transformed[3], flb) ||
+				!utils::world_to_screen(transformed[0], blb) ||
+				!utils::world_to_screen(transformed[2], frb) ||
+				!utils::world_to_screen(transformed[6], blt) ||
+				!utils::world_to_screen(transformed[5], brt) ||
+				!utils::world_to_screen(transformed[4], frt) ||
+				!utils::world_to_screen(transformed[1], brb) ||
+				!utils::world_to_screen(transformed[7], flt))
+				return;
+
+			CVector2D screen[] = { flb, brt, blb, frt, frb, brb, blt, flt };
+
+			float left = flb.x;
+			float top = flb.y;
+			float right = flb.x;
+			float bottom = flb.y;
+
+			for (int i = 0; i < 8; i++)
+			{
+				if (left > screen[i].x)
+					left = screen[i].x;
+				if (top < screen[i].y)
+					top = screen[i].y;
+				if (right < screen[i].x)
+					right = screen[i].x;
+				if (bottom > screen[i].y)
+					bottom = screen[i].y;
+			}
+
+			float x = std::round(left);
+			float y = std::round(bottom);
+			float w = std::round(right - left);
+			float h = std::round(top - bottom);
+
+			return CRect(x, y, w, h);
+		}
+
+/- draw player tracer -/
+	// on render:
+		auto local_pos = local->GetPosition(), target_pos = local->GetPosition() + local->GetForward() * 10.0f;
+		auto local_s = CVector2D(), target_s = CVector2D();
+		if (utils::world_to_screen(local_pos, local_s) && utils::world_to_screen(target_pos, target_s))
+			g_Renderer.line(local_s.x, local_s.y, target_s.x, target_s.y, D3DCOLOR_RGBA(0, 255, 255, 255));
+
+/- draw bullet tracers -/
+	// globals:
+		static std::size_t g_drawTracerTime = 0;
+		std::vector<std::tuple<CVector, CVector>> g_Tracers = {};
+	// on render:
+		for (auto [tracer_start, tracer_end] : g_Tracers)
+		{
+			auto start_s = utils::vecWorldToScreen(tracer_start), end_s = utils::vecWorldToScreen(tracer_end);
+			g_Renderer.line(start_s.x, start_s.y, end_s.x, end_s.y, D3DCOLOR_RGBA(0, 255, 255, 255));
+		}
+		if (CTimer::m_snTimeInMilliseconds - g_drawTracerTime > 10000)
+		{
+			g_Tracers.clear();
+		}
+	// collect data in shot func:
+		g_Tracers.push_back(std::make_tuple(PlayerSniperBulletStart, PlayerSniperBulletEnd));
+		g_drawTracerTime = CTimer::m_snTimeInMilliseconds;
+
+/- give weapon on server (semi-done) -/
+	// funcs:
+		namespace test
+		{
+			// сервер чистит оружие:
+			// local->ClearWeapons();
+			// local->RemoveWeaponModel(-1);
+			// local->SetCurrentWeapon(slot = 0);
+			// local->SetCurrentWeapon(type = 0);
+
+			SafetyHookInline g_hookClearWeapon{};
+			void __fastcall hClearWeapon(CPed* thisptr, void*, eWeaponType weaponType)
+			{
+				auto local = FindPlayerPed();
+				if (local && thisptr == local)
+				{
+					const auto return_address = reinterpret_cast<std::uint32_t>(_ReturnAddress());
+					g_Debug.print("[ClearWeapon] ra: 0x%X | this: 0x%X | type: %d\n", return_address, thisptr, weaponType);
+					if (weaponType == WEAPON_MINIGUN)
+						return;
+				}
+
+				g_hookClearWeapon.thiscall<void, CPed*, eWeaponType>(thisptr, weaponType);
+			}
+
+			SafetyHookInline g_hookClearWeapons{};
+			void __fastcall hClearWeapons(CPed* thisptr, void*)
+			{
+				auto local = FindPlayerPed();
+				if (local && thisptr == local)
+				{
+					const auto return_address = reinterpret_cast<std::uint32_t>(_ReturnAddress());
+					g_Debug.print("[ClearWeapons] ra: 0x%X | this: 0x%X\n", return_address, thisptr);
+					return;
+				}
+
+				g_hookClearWeapons.thiscall<void, CPed*>(thisptr);
+			}
+
+			SafetyHookInline g_hookGiveWeapon{};
+			void __fastcall hGiveWeapon(CPed* thisptr, void*, eWeaponType weaponType, unsigned int ammo, bool likeUnused)
+			{
+				auto local = FindPlayerPed();
+				if (local && thisptr == local)
+				{
+					const auto return_address = reinterpret_cast<std::uint32_t>(_ReturnAddress());
+					g_Debug.print("[GiveWeapon] ra: 0x%X | this: 0x%X | type: %d | ammo: %d | unused: %d\n", return_address, thisptr, weaponType, ammo, likeUnused);
+				}
+
+				g_hookGiveWeapon.thiscall<void, CPed*, eWeaponType, unsigned int, bool>(thisptr, weaponType, ammo, likeUnused);
+			}
+
+			SafetyHookInline g_hookSetCurrentWeapon{};
+			void __fastcall hsSetCurrentWeapon(CPed* thisptr, void*, int slot)
+			{
+				auto local = FindPlayerPed();
+				if (local && thisptr == local)
+				{
+					const auto return_address = reinterpret_cast<std::uint32_t>(_ReturnAddress());
+					g_Debug.print("[sSetCurrentWeapon] ra: 0x%X | this: 0x%X | slot: %d\n", return_address, thisptr, slot);
+
+					if (slot == 0)
+						return;
+				}
+
+				g_hookSetCurrentWeapon.thiscall<void, CPed*, int>(thisptr, slot);
+			}
+
+			SafetyHookInline g_hookSetCurrentWeapon1{};
+			void __fastcall htSetCurrentWeapon(CPed* thisptr, void*, eWeaponType weaponType)
+			{
+				auto local = FindPlayerPed();
+				if (local && thisptr == local)
+				{
+					const auto return_address = reinterpret_cast<std::uint32_t>(_ReturnAddress());
+					g_Debug.print("[tSetCurrentWeapon] ra: 0x%X | this: 0x%X | type: %d\n", return_address, thisptr, weaponType);
+
+					if (weaponType == 0)
+						return;
+				}
+
+				g_hookSetCurrentWeapon1.thiscall<void, CPed*, eWeaponType>(thisptr, weaponType);
+			}
+
+			SafetyHookInline g_hookRemoveWeaponModel{};
+			void __fastcall hRemoveWeaponModel(CPed* thisptr, void*, int modelIndex)
+			{
+				auto local = FindPlayerPed();
+				if (local && thisptr == local)
+				{
+					const auto return_address = reinterpret_cast<std::uint32_t>(_ReturnAddress());
+					g_Debug.print("[RemoveWeaponModel] ra: 0x%X | this: 0x%X | model: %d\n", return_address, thisptr, modelIndex);
+
+					if (modelIndex == MODEL_MINIGUN)
+						return;
+				}
+
+				g_hookRemoveWeaponModel.thiscall<void, CPed*, int>(thisptr, modelIndex);
+			}
+
+			SafetyHookInline g_hookRemoveWeaponAnims{};
+			void __fastcall hRemoveWeaponAnims(CPed* thisptr, void*, int likeUnused, float blendDelta)
+			{
+				auto local = FindPlayerPed();
+				if (local && thisptr == local)
+				{
+					const auto return_address = reinterpret_cast<std::uint32_t>(_ReturnAddress());
+					g_Debug.print("[RemoveWeaponAnims] ra: 0x%X | this: 0x%X | likeUnused: %d | blendDelta: %f\n", return_address, thisptr, likeUnused, blendDelta);
+
+					return;
+				}
+
+				g_hookRemoveWeaponAnims.thiscall<void, CPed*, int, float>(thisptr, likeUnused, blendDelta);
+			}
+
+			void on_init()
+			{
+				g_hookClearWeapon		= safetyhook::create_inline(0x5E62B0, hClearWeapon);
+				g_hookClearWeapons		= safetyhook::create_inline(0x5E6320, hClearWeapons);
+				g_hookGiveWeapon		= safetyhook::create_inline(0x5E6080, hGiveWeapon);
+				g_hookSetCurrentWeapon	= safetyhook::create_inline(0x5E61F0, hsSetCurrentWeapon);
+				g_hookSetCurrentWeapon1 = safetyhook::create_inline(0x5E6280, htSetCurrentWeapon);
+				g_hookRemoveWeaponModel = safetyhook::create_inline(0x5E3990, hRemoveWeaponModel);
+				g_hookRemoveWeaponAnims = safetyhook::create_inline(0x5F0250, hRemoveWeaponAnims);
+			}
+		}
+	// on init:
+		if (g_isSamp)
+			Events::initRwEvent.AddAfter(test::on_init); // minigun test. needs more hooks.
+
+/- draw collectibles (press Numpad+ to collect them all) -/
+	// on render:
+		for (auto i = 0u; i <= MAX_NUM_PICKUPS; i++)
+		{
+			auto pickup = &CPickups::aPickUps[i];
+			if (!pickup)
+				continue;
+
+			static std::unordered_map<unsigned short, std::string> ids = {
+				{MODEL_CJ_OYSTER, "oyster"},
+				{MODEL_CJ_HORSE_SHOE, "horseshoe"},
+				{MODEL_CAMERAPICKUP, "snapshot"},
+
+				// eModelID.h
+			};
+
+			// можно еще оружие и прочую гавну рисовать (type == PICKUP_ON_STREET_SLOW), но мне лень с индексами моделей ебаться
+			auto type = pickup->m_nPickupType;
+			if (type != PICKUP_ONCE && type != PICKUP_SNAPSHOT)
+				continue;
+
+			// там еще куча пикапов, поэтому отсеиваем ненужные
+			auto model_index = pickup->m_nModelIndex;
+			if (model_index != MODEL_CJ_OYSTER && model_index != MODEL_CJ_HORSE_SHOE && model_index != MODEL_CAMERAPICKUP)
+				continue;
+
+			auto pos = pickup->GetPosn(), local_pos = local->GetPosition();
+			auto pos_s = CVector2D();
+
+			// tp pickup to playa
+			if (plugin::KeyPressed(VK_ADD))
+				pickup->SetPosn(local_pos.x, local_pos.y, local_pos.z);
+
+			// если место снимка, то щелкаем. и похуй что камеры нет. там в проверках только расстояние, остальные проверки в CWeapon::TakePhotograph
+			if (model_index == MODEL_CAMERAPICKUP)
+				CPickups::PictureTaken();
+
+			if (!utils::WorldToScreen(pos, pos_s))
+				continue;
+
+			g_Renderer.text(pos_s.x, pos_s.y, DT_LEFT, color::Pink, ids.at(model_index).c_str());
+		}
+
+/- draw spray tags (press Numpad+ to tag them all) -/
+	// funcs:
+		// https://github.com/gta-reversed/gta-reversed/blob/master/source/game_sa/TagManager.h
+		std::uint8_t CTagManager_GetAlpha(CEntity* entity) {
+			return plugin::CallAndReturn<std::uint8_t, 0x49CF90, CEntity*>(entity);
+		}
+
+		void CTagManager_SetAlpha(CEntity* entity, std::uint8_t alpha) {
+			plugin::Call<0x49CEC0, CEntity*, std::uint8_t>(entity, alpha);
+		}
+	// on render:
+		// dont ask anything
+		for (auto building : CPools::ms_pBuildingPool)
+		{
+			if (!building)
+				continue;
+
+			static std::unordered_map<unsigned short, std::pair<std::string, CRGBA>> ids = {
+				{MODEL_TAG_01, {"ballas", color::MediumVioletRed}},
+				{MODEL_TAG_FRONT, {"front", color::MediumVioletRed}},
+				{MODEL_TAG_KILO, {"kilo", color::MediumVioletRed}},
+				{MODEL_TAG_RIFA, {"rifa", color::Cyan}},
+				{MODEL_TAG_ROLLIN, {"rollin", color::MediumVioletRed}},
+				{MODEL_TAG_SEVILLE, {"seville", color::DarkSeaGreen}},
+				{MODEL_TAG_TEMPLE, {"temple", color::MediumVioletRed}},
+				{MODEL_TAG_VAGOS, {"vagos", color::Orange}},
+				{MODEL_TAG_AZTECA, {"azteca", color::Orange}},
+			};
+
+			auto model_index = building->m_nModelIndex;
+			
+			// по идее есть шанс что крашнет без проверки, но эта хуйня столько fps сжирает.
+			// думаю, CBaseModelInfo::IsTagModel() не должен допустить этого
+			//if (!ids.contains(model_index))
+			//	continue;
+
+			auto info = CModelInfo::GetModelInfo(model_index);
+			if (!info || !info->IsTagModel())
+				continue;
+
+			// https://github.com/gta-reversed/gta-reversed/blob/master/source/game_sa/TagManager.cpp#L128
+			static constexpr std::uint8_t ALPHA_TAGGED = 228; // это статья такая
+			std::uint8_t alpha = CTagManager_GetAlpha(building);
+			if (alpha > ALPHA_TAGGED)
+				continue;
+
+			// set tagged
+			if (plugin::KeyPressed(VK_ADD))
+				CTagManager_SetAlpha(building, 255);
+
+			auto pos = building->GetPosition();
+			auto pos_s = CVector2D();
+			if (!utils::WorldToScreen(pos, pos_s))
+				continue;
+
+			g_Renderer.text(pos_s.x, pos_s.y, DT_LEFT, ids.at(model_index).second, ids.at(model_index).first.c_str());
+		}
+
+/- clickwarp (not done yet) -/
+	// funcs:
+		namespace clickwarp {
+		#include "CTaskSimplePlayerOnFoot.h"
+		#include "CTaskSimpleCarSetPedOut.h"
+		#include "CTaskSimpleCarSetPedInAsDriver.h"
+
+			static void in_car(CPlayerPed* local, CVehicle* vehicle)
+			{
+				auto pCurrentVehicle = FindPlayerVehicle(-1, false);
+				if (pCurrentVehicle)
+				{
+					auto pOutTask = new CTaskSimpleCarSetPedOut(pCurrentVehicle, 1, false);
+					if (pOutTask)
+					{
+						// May seem illogical, but it'll crash without this
+						pOutTask->m_bKnockedOffBike = true;
+
+						pOutTask->ProcessPed(local);
+						pOutTask->m_bWarpingOutOfCar = true;
+						delete pOutTask;
+					}
+				}
+
+				CVehicle* pVehicle = vehicle;
+				if (pVehicle)
+				{
+					auto pInTask = new CTaskSimpleCarSetPedInAsDriver(pVehicle, nullptr);
+					if (pInTask)
+					{
+						pInTask->m_bWarpingInToCar = true;
+						pInTask->ProcessPed(local);
+						delete pInTask;
+					}
+				}
+			}
+
+			static void click_warp()
+			{
+				// todo...
+			}
+		}
+
+/- aimbot (another way of doing aimbot. looks better, but cant kill drivers for unknown reasons that i dont want to deal with. also provides minigun mode) -/
+	// hooked:
+		bool __fastcall CTaskSimpleUseGun_ProcessPed(CTaskSimpleUseGun* thisptr, void*, CPed* ped)
+		{
+			// этот аим выглядит прикольнее, чем тот что используется, потому что сиджи наводится на врага
+			// но он не пробивает водителей, по каким-то причинам, с которыми мне впадлу разбираться
+			// ну и еще тут можно сделать режим минигана, что угарно
+
+			auto ret = g_hookProcessPed.thiscall<bool>(thisptr, ped);
+
+			if (thisptr)
+			{
+				const auto local = FindPlayerPed();
+				if (local && ped == local)
+				{
+					const auto target = utils::find_ped_to_attack();
+					if (target && utils::is_weapon_valid(local->m_nActiveWeaponSlot))
+					{
+						// minigun mode for every weapon
+						thisptr->bLefttHand = true;
+						thisptr->bRightHand = true;
+
+						// aimbot
+						//thisptr->m_pTarget = target;
+						thisptr->m_vecTarget = utils::get_bone_position(target, BONE_HEAD2);
+					}
+				}
+			}
+
+			return ret;
+		}
+
+	// globals (1st way):
+		SafetyHookVmt g_hookTaskSimpleUseGun{};
+		SafetyHookVm g_hookProcessPed{};
+
+	// funcs (1st way):
+	static void hook_shot()
+	{
+		// plugin-sdk doesnt have static address for CTaskSimpleUseGun::ProcessPed funtion
+		// and CTaskSimpleUseGun is being initialized when the player starts aiming
+		// so this way you can catch & hook it on the fly
+
+		static bool hooked = false;
+
+		goto hook;
+
+	unhook_and_return:
+		if (hooked)
+		{
+			g_hookProcessPed.reset();
+			g_hookTaskSimpleUseGun.reset();
+			hooked = false;
+		}
+		return;
+
+	hook:
+		auto local = FindPlayerPed();
+		if (!local)
+			goto unhook_and_return;
+
+		auto intelligence = local->m_pIntelligence;
+		if (!intelligence)
+			goto unhook_and_return;
+
+		auto use_gun_task = intelligence->GetTaskUseGun();
+		if (!use_gun_task)
+			goto unhook_and_return;
+
+		if (!hooked)
+		{
+			g_hookTaskSimpleUseGun = safetyhook::create_vmt(use_gun_task);
+			g_hookProcessPed = safetyhook::create_vm(g_hookTaskSimpleUseGun, 7, &CTaskSimpleUseGun_ProcessPed); // 7 - idx of ProcessPed fn in CTaskSimpleUseGun class
+			hooked = true;
+		}
+	}
+
+	// on game process event (1st way, hooking):
+		hook_shot();
+
+	// globals (2nd way):
+		SafetyHookInline g_hookProcessPed{};
+
+	// on init (2nd way, hooking):
+		// plugin-sdk doesnt have static address for CTaskSimpleUseGun::ProcessPed funtion
+		// and CTaskSimpleUseGun is being initialized when the player starts aiming
+		// but after a bit of researching i found it, so you can use it if you want to
+		g_hookProcessPed = safetyhook::create_inline(0x62A380, CTaskSimpleUseGun_ProcessPed);
+
+/- aimbot prediction (does this make sense?) -/
+	// on aimbot:
+	auto target = utils::get_bone_position(aimbot_target, BONE_HEAD2);
+	auto distance = DistanceBetweenPoints(target, local->GetPosition());
+	auto temp = aimbot_target->m_vecMoveSpeed;
+	temp /= distance;
+	target += temp;
+	temp = local->m_vecMoveSpeed;
+	temp /= distance;
+	target -= temp;
+	*end = target;
+
+/- animations stuff (not used and even not tested) -/
+	// funcs:
+	#include "CStreaming.h"
+	#include "CAnimManager.h"
+	#include "CTaskSimpleRunNamedAnim.h"
+	namespace _animations {
+		int CAnimBlock_GetIndex(CAnimBlock* thisptr)
+		{
+			// https://github.com/BlastHackNet/mod_sa/blob/master/src/game_sa/game/CAnimBlock.h#L22
+			return ::plugin::CallVirtualMethodAndReturn<int, 2, CAnimBlock*>(thisptr);
+		}
+
+		void CStreaming_RequestAnimations(CStreaming* thisptr, int iAnimationLibraryBlock, int Streamingflags)
+		{
+			// 0x407120
+			//CStreaming::RequestModel(iAnimationLibraryBlock + 0x63E7, Streamingflags);
+
+			// https://github.com/BlastHackNet/mod_sa/blob/master/src/game_sa/game/CStreaming.h#L21
+			::plugin::CallVirtualMethod<3, CStreaming*, int, int>(thisptr, iAnimationLibraryBlock, Streamingflags);
+		}
+
+		void CTaskManager_RemoveTask(CTaskManager* thisptr, const int iTaskPriority)
+		{
+			// https://github.com/BlastHackNet/mod_sa/blob/master/src/game_sa/game/CTaskManager.h#L99
+			::plugin::CallVirtualMethod<0, CTaskManager*, int>(thisptr, iTaskPriority);
+		}
+
+		void CTaskManager_Flush(CTaskManager* thisptr, const int iPriority)
+		{
+			// https://github.com/BlastHackNet/mod_sa/blob/master/src/game_sa/game/CTaskManager.h#L99
+			::plugin::CallVirtualMethod<11, CTaskManager*, int>(thisptr, iPriority);
+		}
+
+		void GTAfunc_PerformAnimation(CPlayerPed* ped, const char* szBlockName, const char* szAnimName, int iTime, bool bLoop,
+			bool bUpdatePosition, bool bInterruptable, bool bFreezeLastFrame, bool bRunInSequence, bool bOffsetPed, bool bHoldLastFrame)
+		{
+			CAnimBlock* pBlock = CAnimManager::GetAnimationBlock(szBlockName);
+			if (pBlock)
+			{
+				bool bLoaded = true;
+
+				if (!pBlock->bLoaded)
+				{
+					int iTimeToWait = 50;
+
+					// load animations
+					//CStreaming::RequestAnimations(CAnimBlock_GetIndex(pBlock), 4);
+					CStreaming::RequestModel(CAnimBlock_GetIndex(pBlock), 4);
+					CStreaming::LoadAllRequestedModels(false);
+
+					while (!pBlock->bLoaded && iTimeToWait != 0)
+					{
+						iTimeToWait--;
+						Sleep(10);
+					}
+
+					if (iTimeToWait == 0)
+						bLoaded = false;
+				}
+
+				if (bLoaded)
+				{
+					auto taskmgr_ptr = &ped->m_pIntelligence->m_TaskMgr;
+
+					// allow tasks to be removed
+					//ped->m_pIntelligence->m_TaskMgr.Flush(TASK_PRIMARY_PRIMARY);
+					CTaskManager_Flush(taskmgr_ptr, TASK_PRIMARY_PRIMARY);
+
+					// removes temporary tasks caused by events like falling
+					//ped->m_pIntelligence->m_TaskMgr.RemoveTask(TASK_PRIMARY_EVENT_RESPONSE_TEMP);
+					CTaskManager_RemoveTask(taskmgr_ptr, TASK_PRIMARY_EVENT_RESPONSE_TEMP);
+
+					// remove jumping task
+					CTask* jumpTask = ped->m_pIntelligence->m_TaskMgr.FindActiveTaskByType(TASK_COMPLEX_JUMP);
+					if (jumpTask)
+					{
+						//ped->m_pIntelligence->m_TaskMgr.RemoveTask(TASK_PRIMARY_PRIMARY);
+						CTaskManager_RemoveTask(taskmgr_ptr, TASK_PRIMARY_PRIMARY);
+					}
+
+					// more removals if needed ever
+					//pPedSelf->GetPedIntelligence()->GetTaskManager()->RemoveTask(TASK_PRIORITY_EVENT_RESPONSE_NONTEMP);
+					//pPedSelf->GetPedIntelligence()->GetTaskManager()->RemoveTask(TASK_PRIORITY_PHYSICAL_RESPONSE);
+					//pPedSelf->GetPedIntelligence()->GetTaskManager()->RemoveTask(TASK_PRIORITY_MAX);
+					//pPedSelf->GetPedIntelligence()->GetTaskManager()->RemoveTask(TASK_PRIORITY_PRIMARY);
+
+					// set flags
+					int flags = 0x10; // // Stops jaw fucking up, some speaking flag maybe
+					if (bLoop) flags |= 0x2; // flag that triggers the loop (Maccer)
+					if (bUpdatePosition)
+					{
+						// 0x40 enables position updating on Y-coord, 0x80 on X. (Maccer)
+						flags |= 0x40;
+						flags |= 0x80;
+					}
+					if (!bFreezeLastFrame) flags |= 0x08; // flag determines whether to freeze player when anim ends. Really annoying (Maccer)
+
+					// create a new task
+
+					CTaskSimpleRunNamedAnim* pTask = new CTaskSimpleRunNamedAnim(szAnimName, pBlock->szName, flags, 4.0f, iTime, !bInterruptable, bRunInSequence, bOffsetPed, bHoldLastFrame);
+					if (pTask)
+					{
+						ped->m_pIntelligence->m_TaskMgr.SetTask(pTask, TASK_PRIMARY_PRIMARY, false); // bForceNewTask = false
+					}
+				}
+				else
+				{
+					// TODO: unload unreferenced blocks later on
+					//CStreaming::RequestAnimations(CAnimBlock_GetIndex(pBlock), 8);
+					CStreaming::RequestModel(CAnimBlock_GetIndex(pBlock), 8);
+				}
+			}
+		}
+	}
