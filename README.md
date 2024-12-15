@@ -12,9 +12,9 @@ Written in C++.
 - Misc (samp anim reset `(on key "Z")`, crosshair, invulnerability, never wanted, speedhack, no reload, airbrake, telekinesis `(tp peds infront of player)`, minigun mode `(ultimate +C xaxa)`, dumbass peds, give ammo/money/minigun, get collectibles, unlock nearby cars)
 
 ## Demo (Dogshit quality videos. But idc!)
-<iframe width="280" height="157" src="https://www.youtube.com/embed/tGyhTJ-JgE0?si=RP_8v7BcYwnQZC7Z" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> 
-<iframe width="280" height="157" src="https://www.youtube.com/embed/9yV-tkFj8YM?si=JaTYUxFpqMZhfNPk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> 
-<iframe width="280" height="157" src="https://www.youtube.com/embed/v8ALHrFJJzo?si=64WPK_vpsDV9zzU5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<a href="https://www.youtube.com/watch?v=tGyhTJ-JgE0"><img src="https://img.youtube.com/vi/tGyhTJ-JgE0/hqdefault.jpg" alt="Video" style="width:280px;height:170px;"></a> 
+<a href="https://www.youtube.com/watch?v=9yV-tkFj8YM"><img src="https://img.youtube.com/vi/9yV-tkFj8YM/hqdefault.jpg" alt="Video" style="width:280px;height:170px;"></a> 
+<a href="https://www.youtube.com/watch?v=v8ALHrFJJzo"><img src="https://img.youtube.com/vi/v8ALHrFJJzo/hqdefault.jpg" alt="Video" style="width:280px;height:170px;"></a>
 
 ## How to
 - At first you will need to install [plugin-sdk](https://github.com/DK22Pac/plugin-sdk/tree/master?tab=readme-ov-file#how-to-use-plugin-sdk)
