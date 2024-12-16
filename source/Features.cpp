@@ -160,7 +160,7 @@ void Esp::process_graffiti(CBuilding* building)
 	if (!info || !info->IsTagModel())
 		return;
 
-	// https://github.com/gta-reversed/gta-reversed/blob/master/source/game_sa/TagManager.cpp#L128
+	// https://github.com/gta-reversed/gta-reversed/blob/700dfa8a9c9cd2b2c916b17903426e0637e528d7/source/game_sa/TagManager.cpp#L128
 	static constexpr std::uint8_t ALPHA_TAGGED = 228; // это статья такая
 	const std::uint8_t alpha = CTagManager_GetAlpha(building);
 	if (alpha > ALPHA_TAGGED)
@@ -547,6 +547,17 @@ void PlayerCheats::on_game_process()
 				g_Config.sp_RussianMostWanted = false;
 			}
 		}
+
+		// samp anim reset
+		if (utils::key_pressed('Z'))
+		{
+			if (auto intelligence = local->m_pIntelligence)
+				intelligence->ClearTasks(true, true);
+
+			(int&)(local->m_nPhysicalFlags) &= 0xFFFFDFFF; // GTAfunc_LockActor(0);
+			local_info->MakePlayerSafe(false, 10.0f); // GTAfunc_TogglePlayerControllable(0);
+			//TheCamera.RestoreWithJumpCut();
+		}
 	}
 
 	if (g_Config.sp_InvCar)
@@ -586,14 +597,4 @@ void PlayerCheats::on_game_process()
 
 	if (g_Config.sp_Airbrake)
 		airbrake(local, g_timeDiff);
-
-	// samp anim reset
-	if (utils::key_pressed('Z'))
-	{
-		if (auto intelligence = local->m_pIntelligence)
-			intelligence->ClearTasks(true, true);
-
-		//local->m_pIntelligence->m_TaskMgr.Flush();
-		//local->m_pIntelligence->m_TaskMgr.FlushImmediately();
-	}
 }

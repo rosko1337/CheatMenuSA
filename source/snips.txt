@@ -1,3 +1,50 @@
+/- checkpoint tp -/
+	// includes:
+		#include "CRadar.h"
+		#include "CEntryExitManager.h"
+		#include "CGame.h"
+	// on game_process:
+		auto local_pos = local->GetPosition(), end_pos = CVector();
+		static auto idx = 0u;
+		static auto time = 0ull;
+
+		for (auto i = 0; i <= MAX_RADAR_TRACES; i++)
+		{
+			auto a = CRadar::ms_RadarTrace[i];
+			if (!&a)
+				continue;
+
+			if (!a.m_bInUse)
+				continue;
+
+			if (a.m_nBlipDisplay != 2 || a.m_nBlipType != 4)
+				continue;
+
+			end_pos = a.m_vecPos;
+		}
+
+		if (utils::key_pressed('X') && end_pos.Magnitude() > 0.1f)
+		{
+			time = g_timeCurrent;
+			end_pos.z = CWorld::FindGroundZForCoord(end_pos.x, end_pos.y);
+			idx = CEntryExitManager::AddOne(local_pos.x, local_pos.y, local_pos.z - 1.0f, // entrance location
+				0.0f, // entry rotation in degrees
+				2.f, 2.f, // X,Y-radius of entry
+				8, // Z-radius of entry; constant 8, unused
+				end_pos.x, end_pos.y, end_pos.z, // exit location
+				0.0f,  // exit rotation in degrees
+				0, // the target interior number // 3 - cj / 0 - outside
+				16388, // the type of marker // 16388 / 0
+				0, // sky color changer
+				0, 24, // timeOn, timeOff
+				0, // number of peds to spawn in interior
+				"MAPTP" // interior name
+			);
+		}
+
+		if (idx > 0 && CEntryExitManager::GetEntryExit(idx) && g_timeCurrent - time > 5000)
+			CEntryExitManager::DeleteOne(idx);
+
 /- dynamic esp box -/
 	// on render:
 		// dynamic box. looks bad in gta:sa.
@@ -315,7 +362,7 @@
 			if (!info || !info->IsTagModel())
 				continue;
 
-			// https://github.com/gta-reversed/gta-reversed/blob/master/source/game_sa/TagManager.cpp#L128
+			// https://github.com/gta-reversed/gta-reversed/blob/700dfa8a9c9cd2b2c916b17903426e0637e528d7/source/game_sa/TagManager.cpp#L128
 			static constexpr std::uint8_t ALPHA_TAGGED = 228; // это статья такая
 			std::uint8_t alpha = CTagManager_GetAlpha(building);
 			if (alpha > ALPHA_TAGGED)
@@ -485,7 +532,7 @@
 	namespace _animations {
 		int CAnimBlock_GetIndex(CAnimBlock* thisptr)
 		{
-			// https://github.com/BlastHackNet/mod_sa/blob/master/src/game_sa/game/CAnimBlock.h#L22
+			// https://github.com/BlastHackNet/mod_sa/blob/2eaed8ed3acebbf02f25995b52be17291fd56bf0/src/game_sa/game/CAnimBlock.h#L22
 			return ::plugin::CallVirtualMethodAndReturn<int, 2, CAnimBlock*>(thisptr);
 		}
 
@@ -494,19 +541,19 @@
 			// 0x407120
 			//CStreaming::RequestModel(iAnimationLibraryBlock + 0x63E7, Streamingflags);
 
-			// https://github.com/BlastHackNet/mod_sa/blob/master/src/game_sa/game/CStreaming.h#L21
+			// https://github.com/BlastHackNet/mod_sa/blob/2eaed8ed3acebbf02f25995b52be17291fd56bf0/src/game_sa/game/CStreaming.h#L21
 			::plugin::CallVirtualMethod<3, CStreaming*, int, int>(thisptr, iAnimationLibraryBlock, Streamingflags);
 		}
 
 		void CTaskManager_RemoveTask(CTaskManager* thisptr, const int iTaskPriority)
 		{
-			// https://github.com/BlastHackNet/mod_sa/blob/master/src/game_sa/game/CTaskManager.h#L99
+			// https://github.com/BlastHackNet/mod_sa/blob/2eaed8ed3acebbf02f25995b52be17291fd56bf0/src/game_sa/game/CTaskManager.h#L99
 			::plugin::CallVirtualMethod<0, CTaskManager*, int>(thisptr, iTaskPriority);
 		}
 
 		void CTaskManager_Flush(CTaskManager* thisptr, const int iPriority)
 		{
-			// https://github.com/BlastHackNet/mod_sa/blob/master/src/game_sa/game/CTaskManager.h#L99
+			// https://github.com/BlastHackNet/mod_sa/blob/2eaed8ed3acebbf02f25995b52be17291fd56bf0/src/game_sa/game/CTaskManager.h#L112
 			::plugin::CallVirtualMethod<11, CTaskManager*, int>(thisptr, iPriority);
 		}
 

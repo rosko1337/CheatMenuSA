@@ -28,9 +28,6 @@
     <ClCompile Include="..\source\Menu.cpp">
       <Filter>CheatMenu\Menu</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\UndoneMenu.cpp">
-      <Filter>unused</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CheatMenu">
@@ -66,9 +63,6 @@
     <Filter Include="3rd_party\zgui">
       <UniqueIdentifier>{0f0d9eec-fd62-4a5b-97f2-ae76a3df051d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="unused">
-      <UniqueIdentifier>{8c4f7e5e-bf01-479b-a5cd-9554b12f8592}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\Hooked.h">
@@ -97,9 +91,6 @@
     </ClInclude>
     <ClInclude Include="..\source\Menu.h">
       <Filter>CheatMenu\Menu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\UndoneMenu.h">
-      <Filter>unused</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

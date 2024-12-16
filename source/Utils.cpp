@@ -61,7 +61,7 @@ CVector utils::extend_vec3(const CVector& start, const CVector& end)
 }
 
 // custom target selection impl. cuz of membership, green gang model check & no vis check at all
-// https://github.com/gta-reversed/gta-reversed/blob/master/source/game_sa/Entity/Ped/PlayerPed.cpp#L851-L892
+// https://github.com/gta-reversed/gta-reversed/blob/700dfa8a9c9cd2b2c916b17903426e0637e528d7/source/game_sa/Entity/Ped/PlayerPed.cpp#L842-L883
 CPed* utils::find_ped_to_attack()
 {
 	CPed* closestPed{};
@@ -225,7 +225,7 @@ void functions::collect_collectibles()
 		if (!info || !info->IsTagModel())
 			continue;
 
-		// https://github.com/gta-reversed/gta-reversed/blob/master/source/game_sa/TagManager.cpp#L128
+		// https://github.com/gta-reversed/gta-reversed/blob/700dfa8a9c9cd2b2c916b17903426e0637e528d7/source/game_sa/TagManager.cpp#L128
 		static constexpr std::uint8_t ALPHA_TAGGED = 228; // это статья такая
 		std::uint8_t alpha = CTagManager_GetAlpha(building);
 		if (alpha > ALPHA_TAGGED)

@@ -90,22 +90,23 @@ void Menu::on_draw()
 	// draw menu items
 	for (auto q = 0u; q < m_menuItems.size(); q++)
 	{
-		switch (m_menuItems.at(q).type)
+		auto item = m_menuItems.at(q);
+		switch (item.type)
 		{
 		case ItemType::MENUITEM_SUBMENU:
-			button(m_menuRect.left, m_menuRect.top + 2.f + (q * FONT_SIZE), m_menuItems.at(q).name, m_menuItems.at(q).index, m_selectedOption);
+			button(m_menuRect.left, m_menuRect.top + 2.f + (q * FONT_SIZE), item.name, item.index, m_selectedOption);
 			break;
 		case ItemType::MENUITEM_TOGGLE:
-			if (m_menuItems.at(q).data)
-				toggle(m_menuRect.left, m_menuRect.top + 2.f + (q * FONT_SIZE), m_menuItems.at(q).name, m_menuItems.at(q).data, m_menuItems.at(q).index, m_selectedOption);
+			if (item.data)
+				toggle(m_menuRect.left, m_menuRect.top + 2.f + (q * FONT_SIZE), item.name, item.data, item.index, m_selectedOption);
 			break;
 		case ItemType::MENUITEM_VALUE:
-			if (m_menuItems.at(q).data)
-				value(m_menuRect.left, m_menuRect.top + 2.f + (q * FONT_SIZE), m_menuItems.at(q).name, m_menuItems.at(q).data, m_menuItems.at(q).index, m_selectedOption);
+			if (item.data)
+				value(m_menuRect.left, m_menuRect.top + 2.f + (q * FONT_SIZE), item.name, item.data, item.index, m_selectedOption);
 			break;
 		case ItemType::MENUITEM_BUTTON:
-			if (m_menuItems.at(q).data)
-				button(m_menuRect.left, m_menuRect.top + 2.f + (q * FONT_SIZE), m_menuItems.at(q).name, m_menuItems.at(q).index, m_selectedOption);
+			if (item.data)
+				button(m_menuRect.left, m_menuRect.top + 2.f + (q * FONT_SIZE), item.name, item.index, m_selectedOption);
 			break;
 		}
 	}
@@ -122,6 +123,8 @@ bool Menu::on_input(RsEvent event, int key_code)
 	if (!m_isOpen)
 		return false;
 
+	auto item = m_menuItems.at(m_selectedOption);
+
 	// navigation
 	if (key_code == RsKeyCodes::rsUP)
 	{
@@ -131,7 +134,7 @@ bool Menu::on_input(RsEvent event, int key_code)
 			m_selectedOption = m_menuItems.size() - 1;
 
 		// workaround to skip 'separators'. a bit complicated
-		while (!m_menuItems.at(m_selectedOption).data)
+		while (!item.data)
 			m_selectedOption = m_selectedOption == 0 ? m_menuItems.size() - 1 : m_selectedOption - 1;
 	}
 	else if (key_code == RsKeyCodes::rsDOWN)
@@ -142,30 +145,30 @@ bool Menu::on_input(RsEvent event, int key_code)
 			m_selectedOption = 0;
 
 		// same
-		while (!m_menuItems.at(m_selectedOption).data)
+		while (!item.data)
 			m_selectedOption++;
 	}
 
 	// change value or call function
 	if (key_code == RsKeyCodes::rsLEFT || key_code == RsKeyCodes::rsRIGHT)
 	{
-		if (m_menuItems.at(m_selectedOption).type == ItemType::MENUITEM_TOGGLE)
-			*reinterpret_cast<bool*>(m_menuItems.at(m_selectedOption).data) ^= 1;
+		if (item.type == ItemType::MENUITEM_TOGGLE)
+			*reinterpret_cast<bool*>(item.data) ^= 1;
 
-		if (m_menuItems.at(m_selectedOption).type == ItemType::MENUITEM_BUTTON)
-			reinterpret_cast<Item::fn>(m_menuItems.at(m_selectedOption).data)();
+		if (item.type == ItemType::MENUITEM_BUTTON)
+			reinterpret_cast<Item::fn>(item.data)();
 
 		// todo: min/max for value
 		if (key_code == RsKeyCodes::rsLEFT &&
-			m_menuItems.at(m_selectedOption).type == ItemType::MENUITEM_VALUE)
+			item.type == ItemType::MENUITEM_VALUE)
 		{
-			auto& val = *reinterpret_cast<float*>(m_menuItems.at(m_selectedOption).data);
+			auto& val = *reinterpret_cast<float*>(item.data);
 			if (val > 0.01f) val -= 0.1f; // so ghetto...
 		}
 
 		if (key_code == RsKeyCodes::rsRIGHT &&
-			m_menuItems.at(m_selectedOption).type == ItemType::MENUITEM_VALUE)
-			*reinterpret_cast<float*>(m_menuItems.at(m_selectedOption).data) += 0.1f;
+			item.type == ItemType::MENUITEM_VALUE)
+			*reinterpret_cast<float*>(item.data) += 0.1f;
 	}
 
 	return true;

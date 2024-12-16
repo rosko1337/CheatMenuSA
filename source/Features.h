@@ -55,7 +55,7 @@ class PlayerCheats : public Feature
 		float air_brake_accel_time = 2.0f;
 	} set;
 
-	// https://github.com/BlastHackNet/mod_sa/blob/master/src/cheat_actor.cpp#L206
+	// https://github.com/BlastHackNet/mod_sa/blob/2eaed8ed3acebbf02f25995b52be17291fd56bf0/src/cheat_actor.cpp#L206
 	void airbrake(CPlayerPed* ped, double time_diff);
 
 public:
