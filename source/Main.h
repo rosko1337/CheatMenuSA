@@ -11,6 +11,8 @@
 #include "CModelInfo.h"
 #include "CStreaming.h"
 #include "CControllerConfigManager.h"
+#include "CTaskSimpleFight.h"
+#include "CRadar.h"
 #include "ePedBones.h"
 
 // system & stl

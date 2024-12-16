@@ -123,8 +123,6 @@ bool Menu::on_input(RsEvent event, int key_code)
 	if (!m_isOpen)
 		return false;
 
-	auto item = m_menuItems.at(m_selectedOption);
-
 	// navigation
 	if (key_code == RsKeyCodes::rsUP)
 	{
@@ -134,7 +132,7 @@ bool Menu::on_input(RsEvent event, int key_code)
 			m_selectedOption = m_menuItems.size() - 1;
 
 		// workaround to skip 'separators'. a bit complicated
-		while (!item.data)
+		while (!m_menuItems.at(m_selectedOption).data)
 			m_selectedOption = m_selectedOption == 0 ? m_menuItems.size() - 1 : m_selectedOption - 1;
 	}
 	else if (key_code == RsKeyCodes::rsDOWN)
@@ -145,9 +143,11 @@ bool Menu::on_input(RsEvent event, int key_code)
 			m_selectedOption = 0;
 
 		// same
-		while (!item.data)
+		while (!m_menuItems.at(m_selectedOption).data)
 			m_selectedOption++;
 	}
+
+	auto item = m_menuItems.at(m_selectedOption);
 
 	// change value or call function
 	if (key_code == RsKeyCodes::rsLEFT || key_code == RsKeyCodes::rsRIGHT)
