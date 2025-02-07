@@ -129,6 +129,9 @@
     <Text Include="..\source\snips.txt" />
     <Text Include="..\source\todo.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Menu.cd" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

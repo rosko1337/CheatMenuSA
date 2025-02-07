@@ -88,4 +88,7 @@
     <Text Include="..\source\snips.txt" />
     <Text Include="..\source\todo.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Menu.cd" />
+  </ItemGroup>
 </Project>
