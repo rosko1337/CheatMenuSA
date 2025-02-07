@@ -12,7 +12,7 @@ Written in C++.
 - Misc (samp anim reset `(on key "Z")`, crosshair, invulnerability, never wanted, speedhack, no reload, airbrake, telekinesis `(tp peds infront of player)`, minigun mode `(ultimate +C xaxa)`, dumbass peds, give ammo/money/minigun, get collectibles, unlock nearby cars)
 
 ## Demo (Dogshit quality videos. But idc!)
-[Menu pics](https://imgur.com/a/3KdGRFv), [menu class diagram](https://imgur.com/a/lDOqfVk)
+[Menu pics](https://imgur.com/a/3KdGRFv), [menu class diagram](https://imgur.com/a/1IDnH66)
 
 <a href="https://www.youtube.com/watch?v=tGyhTJ-JgE0"><img src="https://img.youtube.com/vi/tGyhTJ-JgE0/hqdefault.jpg" alt="Video" style="width:280px;height:170px;"></a> 
 <a href="https://www.youtube.com/watch?v=9yV-tkFj8YM"><img src="https://img.youtube.com/vi/9yV-tkFj8YM/hqdefault.jpg" alt="Video" style="width:280px;height:170px;"></a> 
