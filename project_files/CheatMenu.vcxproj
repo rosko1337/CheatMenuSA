@@ -110,10 +110,6 @@
     <ClCompile Include="..\source\Features.cpp" />
     <ClCompile Include="..\source\Hooked.cpp" />
     <ClCompile Include="..\source\Main.cpp" />
-    <ClCompile Include="..\source\OldMenu.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\source\Menu.cpp" />
     <ClCompile Include="..\source\Renderer.cpp" />
     <ClCompile Include="..\source\Utils.cpp" />
@@ -124,10 +120,6 @@
     <ClInclude Include="..\source\Features.h" />
     <ClInclude Include="..\source\Hooked.h" />
     <ClInclude Include="..\source\Main.h" />
-    <ClInclude Include="..\source\OldMenu.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="..\source\Menu.h" />
     <ClInclude Include="..\source\Renderer.h" />
     <ClInclude Include="..\source\Utils.h" />

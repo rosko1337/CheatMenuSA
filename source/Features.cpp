@@ -2,15 +2,9 @@
 #include "Utils.h"
 #include "Renderer.h"
 #include "Menu.h"
-#include "OldMenu.h"
 #include "Debug.h"
 
 using namespace plugin;
-
-MapFix g_MapFix;
-Esp g_Esp;
-Radar g_Radar;
-PlayerCheats g_PlayerCheats;
 
 // very ghetto fix. it just works for me so idc.
 void MapFix::on_game_process()
@@ -64,19 +58,19 @@ void Esp::process_ped(CPed* ped)
 	}
 
 	// know your customer
-	const auto& color_target = g_Config.esp_AimTarget ?
+	const auto& color_target = g_Config->esp_AimTarget ?
 		utils::find_ped_to_attack() == ped ? color::Red : color::White :
 		color::White;
 
-	if (g_Config.esp_Box)
+	if (g_Config->esp_Box)
 	{
-		if (g_Config.esp_Outline)
-			g_Renderer.border_box_out(x, y, w, h, 1.f, color_target, CRGBA(0, 0, 0, 127));
+		if (g_Config->esp_Outline)
+			g_Renderer->border_box_out(x, y, w, h, 1.f, color_target, CRGBA(0, 0, 0, 127));
 		else
-			g_Renderer.border_box(x, y, w, h, 1.f, color_target);
+			g_Renderer->border_box(x, y, w, h, 1.f, color_target);
 	}
 
-	if (g_Config.esp_Health) // Bar
+	if (g_Config->esp_Health) // Bar
 	{
 		float health = ped->m_fHealth;
 
@@ -90,18 +84,18 @@ void Esp::process_ped(CPed* ped)
 		// s/o kwezee xaxa. it will look better if you do it this weird way.
 		const auto bar_color = CRGBA(std::min(510 - int(health * 5.1f), 255), std::min(int(health * 5.1f), 255), 0);
 
-		if (g_Config.esp_Outline)
+		if (g_Config->esp_Outline)
 		{
-			g_Renderer.rect(x - 1.f, y + h + 3.f, w + 3.f, 4.f, CRGBA(0, 0, 0, 127));
-			g_Renderer.rect(x, y + h + 4.f, size_w, 2.f, bar_color);
+			g_Renderer->rect(x - 1.f, y + h + 3.f, w + 3.f, 4.f, CRGBA(0, 0, 0, 127));
+			g_Renderer->rect(x, y + h + 4.f, size_w, 2.f, bar_color);
 		}
 		else
 		{
-			g_Renderer.rect(x, y + h + 2.f, size_w, 2.f, bar_color);
+			g_Renderer->rect(x, y + h + 2.f, size_w, 2.f, bar_color);
 		}
 	}
 
-	if (g_Config.esp_Armor && ped->m_fArmour) // Bar
+	if (g_Config->esp_Armor && ped->m_fArmour) // Bar
 	{
 		float armor = ped->m_fArmour;
 
@@ -113,22 +107,22 @@ void Esp::process_ped(CPed* ped)
 		const float real_h = (h + 1.0f) - size_h;
 
 		// move down armor bar a bit
-		if (g_Config.esp_Health)
-			y += g_Config.esp_Outline ? 5.0f : 3.0f;
+		if (g_Config->esp_Health)
+			y += g_Config->esp_Outline ? 5.0f : 3.0f;
 
-		if (g_Config.esp_Outline)
+		if (g_Config->esp_Outline)
 		{
-			g_Renderer.rect(x - 1.f, y + h + 3.f, w + 3.f, 4.f, CRGBA(0, 0, 0, 127));
-			g_Renderer.rect(x, y + h + 4.f, size_w, 2.f, color::Silver);
+			g_Renderer->rect(x - 1.f, y + h + 3.f, w + 3.f, 4.f, CRGBA(0, 0, 0, 127));
+			g_Renderer->rect(x, y + h + 4.f, size_w, 2.f, color::Silver);
 		}
 		else
 		{
-			g_Renderer.rect(x, y + h + 2.f, size_w, 2.f, color::Silver);
+			g_Renderer->rect(x, y + h + 2.f, size_w, 2.f, color::Silver);
 		}
 	}
 
 	// draw distance
-	//g_Renderer.text(x + w / 2, y - 15, DT_LEFT, color::White, "%.f", (pPed->GetPosition() - local->GetPosition()).Magnitude());
+	//g_Renderer->text(x + w / 2, y - 15, DT_LEFT, color::White, "%.f", (pPed->GetPosition() - local->GetPosition()).Magnitude());
 }
 
 void Esp::process_graffiti(CBuilding* building)
@@ -171,7 +165,7 @@ void Esp::process_graffiti(CBuilding* building)
 	if (!utils::world_to_screen(pos, pos_s))
 		return;
 
-	g_Renderer.text(pos_s.x, pos_s.y, DT_LEFT, ids.at(model_index).second, ids.at(model_index).first.c_str());
+	g_Renderer->text(pos_s.x, pos_s.y, DT_LEFT, ids.at(model_index).second, ids.at(model_index).first.c_str());
 }
 
 void Esp::process_collectible(CPickup* pickup)
@@ -202,7 +196,7 @@ void Esp::process_collectible(CPickup* pickup)
 	if (!utils::world_to_screen(pos, pos_s))
 		return;
 
-	g_Renderer.text(pos_s.x, pos_s.y, DT_LEFT, color::Pink, ids.at(model_index).c_str());
+	g_Renderer->text(pos_s.x, pos_s.y, DT_LEFT, color::Pink, ids.at(model_index).c_str());
 }
 
 inline CVector operator+(const CVector& vecOne, float multiplier) {
@@ -211,9 +205,6 @@ inline CVector operator+(const CVector& vecOne, float multiplier) {
 
 void Esp::on_draw()
 {
-	if (g_isPanic)
-		return;
-
 	auto local = FindPlayerPed();
 	if (!local)
 		return;
@@ -223,17 +214,17 @@ void Esp::on_draw()
 		if (!ped || !ped->IsAlive() || ped == local)
 			continue;
 
-		if (g_Config.esp_Enabled)
+		if (g_Config->esp_Enabled)
 			process_ped(ped);
 
 		// gag
-		if (g_Config.sp_DumbassPeds)
+		if (g_Config->sp_DumbassPeds)
 		{
 			if (auto intelligence = ped->m_pIntelligence)
 				intelligence->ClearTasks(true, true);
 		}
 
-		if (g_Config.sp_Telekinesis)
+		if (g_Config->sp_Telekinesis)
 		{
 			if (ped == utils::find_ped_to_attack())
 			{
@@ -248,7 +239,7 @@ void Esp::on_draw()
 	}
 
 	// we dont want to loop through building pool while graffiti esp isnt enabled
-	if (g_Config.esp_Graffiti)
+	if (g_Config->esp_Graffiti)
 	{
 		// dont ask anything
 		for (auto building : CPools::ms_pBuildingPool)
@@ -261,7 +252,7 @@ void Esp::on_draw()
 	}
 
 	// we dont want to loop through pickups pool while collectibles esp isnt enabled
-	if (g_Config.esp_Collectibles)
+	if (g_Config->esp_Collectibles)
 	{
 		for (auto i = 0u; i <= MAX_NUM_PICKUPS; i++)
 		{
@@ -276,11 +267,11 @@ void Esp::on_draw()
 	// watermark
 	static float rainbow = 0.f;
 	rainbow = rainbow > 1.f ? 0.0f : rainbow + 0.0001f;
-	g_Renderer.text(5.f, SCREEN_HEIGHT - FONT_SIZE - 5.0f, DT_LEFT, utils::from_hsb(rainbow, 1.f, 1.f), "%s | FPS: %d", g_watermarkStrings[g_watermarkSelected].c_str(), std::size_t(CTimer::game_FPS));
+	g_Renderer->text(5.f, SCREEN_HEIGHT - FONT_SIZE - 5.0f, DT_LEFT, utils::from_hsb(rainbow, 1.f, 1.f), "%s | FPS: %d", g_watermarkStrings[g_watermarkSelected].c_str(), std::size_t(CTimer::game_FPS));
 
 	// draw crosshair
-	if (g_Config.esp_Crosshair && TheCamera.m_PlayerWeaponMode.m_nMode != MODE_SNIPER)
-		g_Renderer.border_box(SCREEN_WIDTH * CCamera::m_f3rdPersonCHairMultX - 5.f, SCREEN_HEIGHT * CCamera::m_f3rdPersonCHairMultY - 5.f, 10.f, 10.f, 1.f, color::Yellow);
+	if (g_Config->esp_Crosshair && TheCamera.m_PlayerWeaponMode.m_nMode != MODE_SNIPER)
+		g_Renderer->border_box(SCREEN_WIDTH * CCamera::m_f3rdPersonCHairMultX - 5.f, SCREEN_HEIGHT * CCamera::m_f3rdPersonCHairMultY - 5.f, 10.f, 10.f, 1.f, color::Yellow);
 }
 
 void Radar::process_ped(CPlayerPed* local, CPed* ped)
@@ -303,14 +294,11 @@ void Radar::process_ped(CPlayerPed* local, CPed* ped)
 	out.x = SCREEN_STRETCH_X(70.0f) + roundf(out.x);
 	out.y = SCREEN_STRETCH_FROM_BOTTOM(66.0f) + roundf(out.y);
 
-	g_Renderer.rect_out(out.x - 3.0f, out.y - 3.0f, 6.0f, 6.0f, color::White, CRGBA(0, 0, 0, 127));
+	g_Renderer->rect_out(out.x - 3.0f, out.y - 3.0f, 6.0f, 6.0f, color::White, CRGBA(0, 0, 0, 127));
 }
 
 void Radar::on_draw()
 {
-	if (g_isPanic)
-		return;
-
 	auto local = FindPlayerPed();
 	if (!local)
 		return;
@@ -422,7 +410,7 @@ void PlayerCheats::airbrake(CPlayerPed* ped, double time_diff)
 				out = math::matrix_vec4_mult(matrix, vect, 0.0f);
 
 				// follows camera
-				if (g_Config.sp_AirbrakeMode)
+				if (g_Config->sp_AirbrakeMode)
 					out = TheCamera.GetForward();
 
 				matrix->pos.x += out.x * accel;
@@ -469,9 +457,6 @@ void PlayerCheats::airbrake(CPlayerPed* ped, double time_diff)
 
 void PlayerCheats::on_draw()
 {
-	if (g_isPanic)
-		return;
-
 #ifdef DEBUG
 	auto local = FindPlayerPed();
 	if (local)
@@ -479,18 +464,15 @@ void PlayerCheats::on_draw()
 		const auto pos = local->GetPosition();
 		auto pos_screen = CVector2D();
 		if (utils::world_to_screen(pos, pos_screen))
-			g_Renderer.text(pos_screen.x, pos_screen.y, DT_LEFT, color::White, "0x%X", local);
+			g_Renderer->text(pos_screen.x, pos_screen.y, DT_LEFT, color::White, "0x%X", local);
 	}
 #endif // DEBUG
 
-	g_Renderer.text(SCREEN_WIDTH - 5.f, SCREEN_HEIGHT - FONT_SIZE - 5.0f, DT_RIGHT, set.air_brake ? set.air_brake_slowmo ? color::Yellow : color::LimeGreen : color::White, "airbrake");
+	g_Renderer->text(SCREEN_WIDTH - 5.f, SCREEN_HEIGHT - FONT_SIZE - 5.0f, DT_RIGHT, set.air_brake ? set.air_brake_slowmo ? color::Yellow : color::LimeGreen : color::White, "airbrake");
 }
 
 void PlayerCheats::on_game_process()
 {
-	if (g_isPanic)
-		return;
-
 	auto local = FindPlayerPed();
 	if (!local)
 		return;
@@ -498,7 +480,7 @@ void PlayerCheats::on_game_process()
 	auto local_info = local->GetPlayerInfoForThisPlayerPed();
 	if (local_info)
 	{
-		if (g_Config.sp_InvPlayer)
+		if (g_Config->sp_InvPlayer)
 		{
 			const auto max_armour = static_cast<float>(local_info->m_nMaxArmour);
 			const auto max_health1 = static_cast<float>(local_info->m_nMaxHealth);
@@ -516,7 +498,7 @@ void PlayerCheats::on_game_process()
 		auto local_data = &local_info->m_PlayerData;
 		if (local_data)
 		{
-			if (g_Config.aim_PerfectAccuracy)
+			if (g_Config->aim_PerfectAccuracy)
 			{
 				// set weapon accuracy to 100%
 				local->m_nWeaponAccuracy = 100;
@@ -528,11 +510,11 @@ void PlayerCheats::on_game_process()
 				local_info->m_bFastReload = true;
 			}
 
-			if (!g_isSamp && g_Config.sp_NeverWanted)
+			if (!g_isSamp && g_Config->sp_NeverWanted)
 				local->SetWantedLevel(0);
 
 			// я в федеральном розыске нахожусь, я не приеду в россию (c) б/у
-			if (!g_isSamp && g_Config.sp_RussianMostWanted)
+			if (!g_isSamp && g_Config->sp_RussianMostWanted)
 			{
 				auto wanted = local->GetWanted();
 				if (wanted)
@@ -544,7 +526,7 @@ void PlayerCheats::on_game_process()
 
 				local->SetWantedLevel(6);
 
-				g_Config.sp_RussianMostWanted = false;
+				g_Config->sp_RussianMostWanted = false;
 			}
 		}
 
@@ -560,7 +542,7 @@ void PlayerCheats::on_game_process()
 		}
 	}
 
-	if (g_Config.sp_InvCar)
+	if (g_Config->sp_InvCar)
 	{
 		auto vehicle = FindPlayerVehicle(-1, false);
 		if (vehicle)
@@ -571,15 +553,15 @@ void PlayerCheats::on_game_process()
 	}
 
 	// just funny thingy. only you can see it in samp
-	if (g_Config.sp_LegSlide)
+	if (g_Config->sp_LegSlide)
 	{
 		local->m_nPedFlags.bResetWalkAnims = true;
 	}
 
 	// ghetto but it does its job
-	if (g_Config.sp_Speedhack)
+	if (g_Config->sp_Speedhack)
 	{
-		if (g_Config.sp_SpeedhackFaster) {
+		if (g_Config->sp_SpeedhackFaster) {
 			for (auto i = 3u; i--;)
 				local->ApplyMoveSpeed();
 		}
@@ -590,11 +572,11 @@ void PlayerCheats::on_game_process()
 
 	// same as above
 	auto weapon = &local->m_aWeapons[local->m_nActiveWeaponSlot];
-	if (!g_isSamp && g_Config.sp_NoReload && weapon)
+	if (!g_isSamp && g_Config->sp_NoReload && weapon)
 	{
 		weapon->m_nAmmoInClip = weapon->m_nTotalAmmo;
 	}
 
-	if (g_Config.sp_Airbrake)
+	if (g_Config->sp_Airbrake)
 		airbrake(local, g_timeDiff);
 }

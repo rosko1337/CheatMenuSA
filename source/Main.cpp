@@ -2,12 +2,22 @@
 #include "Utils.h"
 #include "Renderer.h"
 #include "Menu.h"
-#include "OldMenu.h"
 #include "Hooked.h"
 #include "Debug.h"
 #include "Features.h"
 
 using namespace plugin;
+
+// huge recode!
+// now using shared_ptr instead of a raw definitions
+// new menu using oop, and now 'submenus' really works! (with extra features for future usage!)
+// fix some unlogical and overcomplicated shit in old menu (why it still stay in code? idk i think cuz its super easy)
+// now code for all 3 menus (new, old, zgui) placed in 2 files instead of being placed in собственных, which is not so good, but i think its easier
+// more mixed-lang comments
+// new fps losses?
+// maybe something that i forgot
+
+// todo: present hook
 
 // credits:
 // https://github.com/zxvnme/zgui
@@ -30,8 +40,18 @@ using namespace plugin;
 // https://imgur.com/a/Fl3h7
 
 // что ты мне сделаешь в другмо городе
-std::string g_watermarkStrings[3] = { "gabapentin <3", "psilocybin <3", "memantine <3" };
+std::vector<std::string> g_watermarkStrings = { "gabapentin <3", "psilocybin <3", "memantine <3", "mj <3", "pregabalin <3", "lsd <3" };
 std::size_t g_watermarkSelected = 0;
+
+std::shared_ptr<Renderer>	g_Renderer;
+std::shared_ptr<Config>		g_Config;
+std::shared_ptr<Menu>		g_Menu;
+std::shared_ptr<Debug>		g_Debug;
+
+std::shared_ptr<MapFix>			g_MapFix;
+std::shared_ptr<Esp>			g_Esp;
+std::shared_ptr<Radar>			g_Radar;
+std::shared_ptr<PlayerCheats>	g_PlayerCheats;
 
 SafetyHookInline	g_hookGetWeaponInfo{};
 SafetyHookInline	g_hookHandleGunShot{};
@@ -79,43 +99,42 @@ public:
 		// a la safe mode
 		if (g_isSamp)
 		{
-			g_Config.aim_Smart = true;
-			g_Config.aim_Randomize = true;
-			g_Config.aim_SmallFov = true;
-			g_Config.sp_InvPlayer = false;
-			g_Config.sp_InvCar = false;
-			g_Config.sp_NeverWanted = false;
-			g_Config.sp_AimIgnoreGroove = false;
-			g_Config.sp_NoReload = false;
+			g_Config->aim_Smart = true;
+			g_Config->aim_Randomize = true;
+			g_Config->sp_InvPlayer = false;
+			g_Config->sp_InvCar = false;
+			g_Config->sp_NeverWanted = false;
+			g_Config->sp_AimIgnoreGroove = false;
+			g_Config->sp_NoReload = false;
 		}
 
 		// useless tbh
-		g_watermarkSelected = plugin::RandomNumberInRange(0, 2);
+		g_watermarkSelected = plugin::RandomNumberInRange(0u, g_watermarkStrings.size());
 
 		// hook game funcs
-		g_hookGetWeaponInfo					= safetyhook::create_inline(0x743C60, hooked::GetWeaponInfo);
-		g_hookHandleGunShot					= safetyhook::create_inline(0x712E40, hooked::HandleGunShot);
-		g_hookFireInstantHitFromCar2		= safetyhook::create_inline(0x73CBA0, hooked::FireInstantHitFromCar2);
-		g_hookAddBullet						= safetyhook::create_inline(0x736010, hooked::AddBullet);
-		g_hookProcessPed					= safetyhook::create_inline(0x62A380, hooked::CTaskSimpleUseGun_ProcessPed);
+		g_hookGetWeaponInfo			 = safetyhook::create_inline(0x743C60, hooked::GetWeaponInfo);
+		g_hookHandleGunShot			 = safetyhook::create_inline(0x712E40, hooked::HandleGunShot);
+		g_hookFireInstantHitFromCar2 = safetyhook::create_inline(0x73CBA0, hooked::FireInstantHitFromCar2);
+		g_hookAddBullet				 = safetyhook::create_inline(0x736010, hooked::AddBullet);
+		g_hookProcessPed			 = safetyhook::create_inline(0x62A380, hooked::CTaskSimpleUseGun_ProcessPed);
 
-#ifdef NEW_MENU
-		auto user32 = GetModuleHandleA("user32.dll");
-		if (user32)
-		{
-			auto scp = GetProcAddress(user32, "SetCursorPos");
-			if (scp)
-				g_hookSetCursorPos			= safetyhook::create_inline(scp, hooked::SetCursorPos);
-		}
-#endif // NEW_MENU
+#ifdef USE_ZGUI_MENU
+		zgui_input_hook();
+#endif // USE_ZGUI_MENU
 
-		// hook input. im too lazy to mess with wndproc tbh
+		// hook game keyboard input. im too lazy to mess with wndproc tbh
 		g_originalInputEventHandler			= RsGlobal.keyboard.inputEventHandler;
 		RsGlobal.keyboard.inputEventHandler = hooked::inputEventHandler;
 
-		g_Renderer.on_init();
-		g_Debug.on_init();
-		g_Menu.on_init();
+		g_Renderer		= std::make_shared<Renderer>();
+		g_Config		= std::make_shared<Config>();
+		g_Debug			= std::make_shared<Debug>();
+		g_Menu			= std::make_shared<Menu>();
+
+		g_MapFix		= std::make_shared<MapFix>();
+		g_Esp			= std::make_shared<Esp>();
+		g_Radar			= std::make_shared<Radar>();
+		g_PlayerCheats	= std::make_shared<PlayerCheats>();
 	}
 
 	static void on_shutdown()
@@ -126,17 +145,22 @@ public:
 		g_hookFireInstantHitFromCar2 = {};
 		g_hookAddBullet				 = {};
 		g_hookProcessPed			 = {};
-
-#ifdef NEW_MENU
 		g_hookSetCursorPos			 = {};
-#endif // NEW_MENU
 
 		// unhook input
 		RsGlobal.keyboard.inputEventHandler = g_originalInputEventHandler;
 
-		g_Menu.on_shutdown();
-		g_Debug.on_shutdown();
-		g_Renderer.on_shutdown();
+		// release features
+		SafeReset(g_PlayerCheats);
+		SafeReset(g_Radar);
+		SafeReset(g_Esp);
+		SafeReset(g_MapFix);
+
+		// release base stuff
+		SafeReset(g_Menu);
+		SafeReset(g_Debug);
+		SafeReset(g_Config);
+		SafeReset(g_Renderer);
 	}
 
 	static void on_game_process()
@@ -145,58 +169,38 @@ public:
 		g_timeCurrent = utils::time_get();
 		g_timeDiff = TIME_TO_DOUBLE(g_timeCurrent - time_last);
 
-		// sp only
-		if (!g_isSamp)
-			g_MapFix.on_game_process();
+		if (!g_isSamp) // sp only
+			g_MapFix->on_game_process();
 
-		// do nothing while in menu
-		if (utils::gta_menu_active())
-			return;
+		if (g_isPanic || utils::gta_menu_active()) return; // do nothing while in menu or if in panic
 
-		g_PlayerCheats.on_game_process();
+		g_PlayerCheats->on_game_process();
 
 		time_last = g_timeCurrent;
 	}
 
 	static void on_draw()
 	{
-		// do nothing while in menu
-		if (utils::gta_menu_active())
-			return;
+		if (g_isPanic || utils::gta_menu_active()) return; // do nothing while in menu or if in panic
 
-		g_Renderer.on_draw_start();
-		{
-			g_Esp.on_draw();
-			g_Menu.on_draw();
-			//g_Debug.on_draw();
-			g_PlayerCheats.on_draw();
-		}
-		g_Renderer.on_draw_end();
+		g_Renderer->on_draw_start();
+			g_Esp->on_draw();
+			g_Menu->on_draw();
+			//g_Debug->on_draw();
+			g_PlayerCheats->on_draw();
+		g_Renderer->on_draw_end();
 	}
 
 	static void on_draw_hud()
 	{
-		// do nothing while in menu
-		if (utils::gta_menu_active())
-			return;
+		if (!g_Config->esp_Radar) return;
+		if (g_isPanic || utils::gta_menu_active()) return; // do nothing while in menu or if in panic
 
-		if (!g_Config.esp_Radar)
-			return;
-
-		g_Renderer.on_draw_start();
-		{
-			g_Radar.on_draw();
-		}
-		g_Renderer.on_draw_end();
+		g_Renderer->on_draw_start();
+			g_Radar->on_draw();
+		g_Renderer->on_draw_end();
 	}
 
-	static void on_d3d_lost()
-	{
-		g_Renderer.on_lost();
-	}
-
-	static void on_d3d_reset()
-	{
-		g_Renderer.on_reset();
-	}
+	static void on_d3d_lost()	{ g_Renderer->on_lost(); }
+	static void on_d3d_reset()	{ g_Renderer->on_reset(); }
 } CheatMenuPlugin;

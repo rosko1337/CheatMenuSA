@@ -1,6 +1,5 @@
 #include "Utils.h"
 #include "Menu.h"
-#include "OldMenu.h"
 
 CVector utils::get_bone_position(CPed* pPed, const std::size_t& bone, const bool& transformed)
 {
@@ -79,15 +78,15 @@ CPed* utils::find_ped_to_attack()
 		if (!ped || ped == local || !ped->IsAlive() || ped->m_fHealth == 0.0f)
 			continue;
 
-		if (g_Config.sp_AimIgnoreGroove && ped->m_nPedType == PED_TYPE_GANG2)
+		if (g_Config->sp_AimIgnoreGroove && ped->m_nPedType == PED_TYPE_GANG2)
 			continue;
 
 		auto local_head = get_bone_position(local, BONE_HEAD2), target_head = get_bone_position(ped, BONE_HEAD2);
-		if (g_Config.aim_TargetVisible && !CWorld::GetIsLineOfSightClear(local_head, target_head, true, false, false, true, true, false, false))
+		if (g_Config->aim_TargetVisible && !CWorld::GetIsLineOfSightClear(local_head, target_head, true, false, false, true, true, false, false))
 			continue;
 
 		auto target_s = CVector2D(), crosshair_pos = CVector2D(SCREEN_WIDTH * CCamera::m_f3rdPersonCHairMultX, SCREEN_HEIGHT * CCamera::m_f3rdPersonCHairMultY);
-		if (g_Config.aim_TargetOnScreen && !world_to_screen(target_head, target_s))
+		if (g_Config->aim_TargetOnScreen && !world_to_screen(target_head, target_s))
 			continue;
 
 		CVector point = ped->GetPosition();
@@ -98,8 +97,8 @@ CPed* utils::find_ped_to_attack()
 		if (pointDist > 20.0f)
 			dist += (pointDist - 20.0f) / 5.0f;
 
-		if ((g_Config.aim_GangsPriority && (ped->m_nPedType >= PED_TYPE_GANG1 && ped->m_nPedType <= PED_TYPE_GANG10)) // IsPedTypeGang(ped->m_nPedType)
-			|| (g_Config.aim_CopsPriority && ped->m_nPedType == PED_TYPE_COP))
+		if ((g_Config->aim_GangsPriority && (ped->m_nPedType >= PED_TYPE_GANG1 && ped->m_nPedType <= PED_TYPE_GANG10)) // IsPedTypeGang(ped->m_nPedType)
+			|| (g_Config->aim_CopsPriority && ped->m_nPedType == PED_TYPE_COP))
 			dist = std::max(0.0f, dist / 2.0f - 2.0f);
 
 		if (dist < closestDistance) {

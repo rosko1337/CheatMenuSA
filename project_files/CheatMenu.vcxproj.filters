@@ -22,9 +22,6 @@
     <ClCompile Include="..\source\zgui\zgui.cc">
       <Filter>3rd_party\zgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\OldMenu.cpp">
-      <Filter>CheatMenu\Menu\old</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\Menu.cpp">
       <Filter>CheatMenu\Menu</Filter>
     </ClCompile>
@@ -54,9 +51,6 @@
     <Filter Include="CheatMenu\Features">
       <UniqueIdentifier>{b7e9eccc-088d-4d87-aa6e-0f02d3b839cc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="CheatMenu\Menu\old">
-      <UniqueIdentifier>{6ab94af2-6725-465a-8260-2b4cd84fc0cc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="3rd_party">
       <UniqueIdentifier>{254b8ea1-47a8-44c9-b8fe-07f8c2ffdfa8}</UniqueIdentifier>
     </Filter>
@@ -85,9 +79,6 @@
     </ClInclude>
     <ClInclude Include="..\source\zgui\zgui.hh">
       <Filter>3rd_party\zgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\OldMenu.h">
-      <Filter>CheatMenu\Menu\old</Filter>
     </ClInclude>
     <ClInclude Include="..\source\Menu.h">
       <Filter>CheatMenu\Menu</Filter>

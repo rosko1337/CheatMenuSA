@@ -20,10 +20,8 @@ class Renderer
 	DWORD					m_FVF;
 
 public:
-	Renderer() : m_pDevice(nullptr), m_pStateBlock(nullptr), m_pD3DXFont(nullptr), m_pTexture(nullptr), m_pShader(nullptr), m_FVF(0) { };
-
-	void on_init();
-	void on_shutdown();
+	Renderer();
+	~Renderer();
 
 	void on_lost();
 	void on_reset();
@@ -38,4 +36,4 @@ public:
 	void line(float x0, float y0, float x1, float y1, const CRGBA& color);
 	void cursor(float x, float y, const CRGBA& color);
 	void text_size(const char* text, int& w, int& h);
-} extern g_Renderer;
+};

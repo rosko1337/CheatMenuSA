@@ -129,7 +129,7 @@
 		auto local_pos = local->GetPosition(), target_pos = local->GetPosition() + local->GetForward() * 10.0f;
 		auto local_s = CVector2D(), target_s = CVector2D();
 		if (utils::world_to_screen(local_pos, local_s) && utils::world_to_screen(target_pos, target_s))
-			g_Renderer.line(local_s.x, local_s.y, target_s.x, target_s.y, D3DCOLOR_RGBA(0, 255, 255, 255));
+			g_Renderer->line(local_s.x, local_s.y, target_s.x, target_s.y, D3DCOLOR_RGBA(0, 255, 255, 255));
 
 /- draw bullet tracers -/
 	// globals:
@@ -139,7 +139,7 @@
 		for (auto [tracer_start, tracer_end] : g_Tracers)
 		{
 			auto start_s = utils::vecWorldToScreen(tracer_start), end_s = utils::vecWorldToScreen(tracer_end);
-			g_Renderer.line(start_s.x, start_s.y, end_s.x, end_s.y, D3DCOLOR_RGBA(0, 255, 255, 255));
+			g_Renderer->line(start_s.x, start_s.y, end_s.x, end_s.y, D3DCOLOR_RGBA(0, 255, 255, 255));
 		}
 		if (CTimer::m_snTimeInMilliseconds - g_drawTracerTime > 10000)
 		{
@@ -319,7 +319,7 @@
 			if (!utils::WorldToScreen(pos, pos_s))
 				continue;
 
-			g_Renderer.text(pos_s.x, pos_s.y, DT_LEFT, color::Pink, ids.at(model_index).c_str());
+			g_Renderer->text(pos_s.x, pos_s.y, DT_LEFT, color::Pink, ids.at(model_index).c_str());
 		}
 
 /- draw spray tags (press Numpad+ to tag them all) -/
@@ -377,7 +377,7 @@
 			if (!utils::WorldToScreen(pos, pos_s))
 				continue;
 
-			g_Renderer.text(pos_s.x, pos_s.y, DT_LEFT, ids.at(model_index).second, ids.at(model_index).first.c_str());
+			g_Renderer->text(pos_s.x, pos_s.y, DT_LEFT, ids.at(model_index).second, ids.at(model_index).first.c_str());
 		}
 
 /- clickwarp (not done yet) -/

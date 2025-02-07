@@ -2,9 +2,9 @@
 #include "Renderer.h"
 #include "Utils.h"
 
-Debug g_Debug;
-
-void Debug::on_init() {
+Debug::Debug()
+	: m_consoleOut(nullptr), m_drawStringsTime(0u), m_drawShotsTime(0u)
+{
 #ifdef DEBUG
 	//AllocConsole();
 	//AttachConsole(GetCurrentProcessId());
@@ -12,8 +12,8 @@ void Debug::on_init() {
 #endif // DEBUG
 }
 
-void Debug::on_shutdown() {
-
+Debug::~Debug()
+{
 	if (!m_debugStrings.empty())
 		m_debugStrings.clear();
 
@@ -30,7 +30,7 @@ void Debug::on_draw() {
 	std::size_t i = 0u;
 	for (auto str : m_debugStrings)
 	{
-		g_Renderer.text(5.f, 50.f + (i++ * FONT_SIZE), DT_LEFT, plugin::color::White, str.c_str());
+		g_Renderer->text(5.f, 50.f + (i++ * FONT_SIZE), DT_LEFT, plugin::color::White, str.c_str());
 	}
 	if (CTimer::m_snTimeInMilliseconds - m_drawStringsTime > 10000 /*|| m_debugStrings.size() > 20*/)
 	{
@@ -41,7 +41,7 @@ void Debug::on_draw() {
 	for (auto [tracer_start, tracer_end] : m_debugShots)
 	{
 		auto start_s = utils::vecWorldToScreen(tracer_start), end_s = utils::vecWorldToScreen(tracer_end);
-		g_Renderer.line(start_s.x, start_s.y, end_s.x, end_s.y, D3DCOLOR_RGBA(0, 255, 255, 255));
+		g_Renderer->line(start_s.x, start_s.y, end_s.x, end_s.y, D3DCOLOR_RGBA(0, 255, 255, 255));
 	}
 	if (CTimer::m_snTimeInMilliseconds - m_drawShotsTime > 10000)
 	{

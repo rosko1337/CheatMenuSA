@@ -8,16 +8,15 @@ public:
 	Feature() = default;
 	virtual ~Feature() = default;
 
-	virtual void on_draw() = 0;
-	virtual void on_game_process() = 0;
+	virtual void on_draw() { };
+	virtual void on_game_process() { };
 };
 
 class MapFix : public Feature
 {
 public:
-	void on_draw() { };
 	void on_game_process() override;
-} extern g_MapFix;
+};
 
 class Esp : public Feature
 {
@@ -27,8 +26,7 @@ class Esp : public Feature
 
 public:
 	void on_draw() override;
-	void on_game_process() { };
-} extern g_Esp;
+};
 
 class Radar : public Feature
 {
@@ -42,8 +40,7 @@ class Radar : public Feature
 
 public:
 	void on_draw() override;
-	void on_game_process() { };
-} extern g_Radar;
+};
 
 class PlayerCheats : public Feature
 {
@@ -61,4 +58,4 @@ class PlayerCheats : public Feature
 public:
 	void on_draw() override;
 	void on_game_process() override;
-} extern g_PlayerCheats;
+};

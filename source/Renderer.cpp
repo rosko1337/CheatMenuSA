@@ -2,18 +2,17 @@
 
 using namespace plugin;
 
-Renderer g_Renderer;
-
-void Renderer::on_shutdown()
-{
-	on_lost();
-}
-
-void Renderer::on_init()
+Renderer::Renderer()
+	: m_pDevice(nullptr), m_pStateBlock(nullptr), m_pD3DXFont(nullptr), m_pTexture(nullptr), m_pShader(nullptr), m_FVF(0)
 {
 	m_pDevice = reinterpret_cast<IDirect3DDevice9*>(RwD3D9GetCurrentD3DDevice());
 
 	on_reset();
+}
+
+Renderer::~Renderer()
+{
+	on_lost();
 }
 
 void Renderer::on_lost()

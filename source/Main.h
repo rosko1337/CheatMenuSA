@@ -17,12 +17,15 @@
 
 // system & stl
 #include <intrin.h>
+#include <memory>
+#include <stack>
 
 // dx9
 #include <d3d9.h>
 #include <d3dx9.h>
 
 // useful
+#define NEW_MENU_API extern "C" __declspec(dllexport)
 #define GetCurrentStackFrame() (reinterpret_cast<std::uint32_t*>(std::uint32_t(_AddressOfReturnAddress()) - sizeof(std::uint32_t*)))
 #define InRange(val, _min, _max) !!(val > _min && val < _max) // exclusive
 #define MSEC_TO_TIME( v )	( (std::uint64_t) (v) * 10 )
@@ -33,12 +36,34 @@
 #define DEFAULT_SCREEN_WIDTH 640
 #define DEFAULT_SCREEN_HEIGHT 448
 
-// comment this line if you want to use old menu
-//#define NEW_MENU
+template<typename T>
+inline void SafeReset(T object)
+{
+	if (object) object.reset();
+	object = nullptr;
+}
+
+using func_fn = void(*)();
+
+//#define USE_ZGUI_MENU // uncomment this line if you want to use zgui menu
+//#define USE_OLD_MENU // uncomment this line if you want to use old menu
+#define USE_NEW_MENU // uncomment this line if you want to use new menu
 
 // watermark shit
-extern std::string g_watermarkStrings[3];
+extern std::vector<std::string> g_watermarkStrings;
 extern std::size_t g_watermarkSelected;
+
+// base globals
+extern std::shared_ptr<class  Renderer>	g_Renderer;
+extern std::shared_ptr<struct Config>	g_Config;
+extern std::shared_ptr<class  Menu>		g_Menu;
+extern std::shared_ptr<class  Debug>	g_Debug;
+
+// features globals
+extern std::shared_ptr<class MapFix>		g_MapFix;
+extern std::shared_ptr<class Esp>			g_Esp;
+extern std::shared_ptr<class Radar>			g_Radar;
+extern std::shared_ptr<class PlayerCheats>	g_PlayerCheats;
 
 // hooking related
 extern SafetyHookInline	   g_hookGetWeaponInfo;

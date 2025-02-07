@@ -4,25 +4,11 @@
 
 namespace utils
 {
-	inline bool is_bone_valid(const std::size_t& bone) {
-		return InRange(bone, 0, 9) || InRange(bone, 20, 27) || InRange(bone, 30, 37) || InRange(bone, 40, 45) || InRange(bone, 50, 55);
-	}
-
-	inline bool is_weapon_valid(const unsigned char& slot) {
-		return InRange(slot, 1, 8);
-	}
-
-	inline bool gta_menu_active() {
-		return FrontEndMenuManager.m_bMenuActive;
-	}
-
-	inline bool key_pressed(int key_code) {
-		return ControlsManager.GetIsKeyboardKeyJustDown(RsKeyCodes(key_code));
-	}
-
-	inline bool key_down(int key_code) {
-		return ControlsManager.GetIsKeyboardKeyDown(RsKeyCodes(key_code));
-	}
+	inline bool is_bone_valid(const std::size_t& bone)		{ return InRange(bone, 0, 9) || InRange(bone, 20, 27) || InRange(bone, 30, 37) || InRange(bone, 40, 45) || InRange(bone, 50, 55); }
+	inline bool is_weapon_valid(const unsigned char& slot)	{ return InRange(slot, 1, 8); }
+	inline bool gta_menu_active()							{ return FrontEndMenuManager.m_bMenuActive; }
+	inline bool key_pressed(const int& key_code)			{ return ControlsManager.GetIsKeyboardKeyJustDown(RsKeyCodes(key_code)); }
+	inline bool key_down(const int& key_code)				{ return ControlsManager.GetIsKeyboardKeyDown(RsKeyCodes(key_code)); }
 
 	CVector			get_bone_position(CPed* pPed, const std::size_t& bone, const bool& transformed = false);
 	bool			world_to_screen(const CVector& vecWorld, CVector2D& vecScreen);
