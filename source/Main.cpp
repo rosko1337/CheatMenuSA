@@ -8,15 +8,6 @@
 
 using namespace plugin;
 
-// huge recode!
-// now using shared_ptr instead of a raw definitions
-// new menu using oop, and now 'submenus' really works! (with extra features for future usage!)
-// fix some unlogical and overcomplicated shit in old menu (why it still stay in code? idk i think cuz its super easy)
-// now code for all 3 menus (new, old, zgui) placed in 2 files instead of being placed in собственных, which is not so good, but i think its easier
-// more mixed-lang comments
-// new fps losses?
-// maybe something that i forgot
-
 // todo: present hook
 
 // credits:

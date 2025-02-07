@@ -108,7 +108,7 @@ public:
 
 class FuncOption : public Option
 {
-	func_fn m_optionFn;
+	func_fn m_optionFn; // std::function< void( ) > callback;
 
 public:
 	FuncOption(const std::string& name, func_fn func, const std::string& description)
