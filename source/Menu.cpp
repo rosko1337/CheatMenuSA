@@ -69,23 +69,6 @@ void Menu::on_draw()
 {
 	if (!m_isOpen) return;
 
-	const auto update_visible_options = [&]() -> void { // ghetto c+p codez by deepseek or chatgpt. sorry.
-		if (!m_visibleOptions.empty()) m_visibleOptions.clear();
-
-		for (const auto& item : m_options)
-		{
-			m_visibleOptions.push_back(item);
-			if (auto sub_menu = dynamic_cast<SubMenu*>(item.get()))
-			{
-				if (sub_menu->is_open())
-				{
-					for (const auto& sub_item : sub_menu->get_options()) {
-						m_visibleOptions.push_back(sub_item);
-					}
-				}
-			}
-		}
-	};
 	update_visible_options();
 
 	if (m_options.empty() || m_visibleOptions.empty()) return;
@@ -117,7 +100,7 @@ void Menu::on_draw()
 		const CRGBA& nameColor = (i == m_selectedOptionIndex) ? color::Gold : color::White;
 
 		// вызываем метод on_draw у текущей опции
-		m_visibleOptions.at(i)->on_draw(x, y, w, nameColor);
+		m_visibleOptions.at(i)->on_draw(x, y, w, h, nameColor);
 
 		// смещаем следующую опцию вниз
 		y += FONT_SIZE;
@@ -150,7 +133,7 @@ bool Menu::on_input(int key_code)
 	return true;
 }
 
-void BoolOption::on_draw(float x, float y, float w, const CRGBA& color)
+void BoolOption::on_draw(float x, float y, float w, float h, const CRGBA& color)
 {
 	// draw variable name
 	g_Renderer->text(x + 4.f, y, DT_LEFT, color, m_optionName.c_str());
@@ -165,7 +148,7 @@ void BoolOption::on_input(int key_code)
 		m_optionValue ^= 1; // change value state
 }
 
-void IntOption::on_draw(float x, float y, float w, const CRGBA& color)
+void IntOption::on_draw(float x, float y, float w, float h, const CRGBA& color)
 {
 	// draw variable name
 	g_Renderer->text(x + 4.f, y, DT_LEFT, color, m_optionName.c_str());
@@ -182,7 +165,7 @@ void IntOption::on_input(int key_code)
 		m_optionValue = std::max(m_optionValue - 1, m_optionValueMin); // -
 }
 
-void FloatOption::on_draw(float x, float y, float w, const CRGBA& color)
+void FloatOption::on_draw(float x, float y, float w, float h, const CRGBA& color)
 {
 	// draw variable name
 	g_Renderer->text(x + 4.f, y, DT_LEFT, color, m_optionName.c_str());
@@ -199,10 +182,10 @@ void FloatOption::on_input(int key_code)
 		m_optionValue = std::max(m_optionValue - m_optionValueStep, m_optionValueMin); // -
 }
 
-void FuncOption::on_draw(float x, float y, float w, const CRGBA& color)
+void FuncOption::on_draw(float x, float y, float w, float h, const CRGBA& color)
 {
 	// draw 'button'
-	g_Renderer->text(x + w / 2.f, y, DT_CENTER, color, m_optionName.c_str());
+	g_Renderer->text(x + 4.f, y, DT_LEFT, color, "- %s();", m_optionName.c_str()); // x + w / 2.f, DT_CENTER
 }
 
 void FuncOption::on_input(int key_code)
@@ -211,7 +194,7 @@ void FuncOption::on_input(int key_code)
 		m_optionFn(); // call a function
 }
 
-void SubMenu::on_draw(float x, float y, float w, const CRGBA& color)
+void SubMenu::on_draw(float x, float y, float w, float h, const CRGBA& color)
 {
 	g_Renderer->text(x + w / 2.f, y, DT_CENTER, color, m_isOpen ? "----> [ %s ] <----" : "----- [ %s ] -----", m_optionName.c_str());
 
@@ -239,16 +222,18 @@ namespace menu_api
 {
 	std::stack<std::shared_ptr<SubMenu>> submenu;
 
-	void begin_submenu(const std::string& name, const std::string& description)
-	{
+	void begin_submenu(const std::string& name, const std::string& description) {
 		auto ptr = std::make_shared<SubMenu>(name, description);
 		submenu.push(ptr);
 	}
 
-	void end_submenu()
-	{
+	void end_submenu() {
 		g_Menu->add_option(std::move(submenu.top()));
 		submenu.pop();
+	}
+
+	void remove_submenu(const std::string& name) {
+		g_Menu->remove_option(name);
 	}
 
 	void add_bool(const std::string& name, bool& value, const std::string& description)	{

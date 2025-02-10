@@ -55,7 +55,7 @@ public:
 
 	virtual ~Option() = default;
 
-	virtual void on_draw(float x, float y, float w, const CRGBA& color) = 0;
+	virtual void on_draw(float x, float y, float w, float h, const CRGBA& color) = 0;
 	virtual void on_input(int key_code) = 0;
 
 	std::string name()			const { return m_optionName; }
@@ -70,7 +70,7 @@ public:
 	BoolOption(const std::string& name, bool& value, const std::string& description)
 		: Option(name, description), m_optionValue(value) { }
 
-	void on_draw(float x, float y, float w, const CRGBA& color) override;
+	void on_draw(float x, float y, float w, float h, const CRGBA& color) override;
 	void on_input(int key_code) override;
 
 	bool value() const { return m_optionValue; }
@@ -85,7 +85,7 @@ public:
 	IntOption(const std::string& name, int& value, int min_value, int max_value, const std::string& description)
 		: Option(name, description), m_optionValue(value), m_optionValueMin(min_value), m_optionValueMax(max_value) { }
 
-	void on_draw(float x, float y, float w, const CRGBA& color) override;
+	void on_draw(float x, float y, float w, float h, const CRGBA& color) override;
 	void on_input(int key_code) override;
 
 	int value() const { return m_optionValue; }
@@ -100,7 +100,7 @@ public:
 	FloatOption(const std::string& name, float& value, float min_value, float max_value, float step, const std::string& description)
 		: Option(name, description), m_optionValue(value), m_optionValueMin(min_value), m_optionValueMax(max_value), m_optionValueStep(step) { }
 
-	void on_draw(float x, float y, float w, const CRGBA& color) override;
+	void on_draw(float x, float y, float w, float h, const CRGBA& color) override;
 	void on_input(int key_code) override;
 
 	float value() const { return m_optionValue; }
@@ -114,7 +114,7 @@ public:
 	FuncOption(const std::string& name, func_fn func, const std::string& description)
 		: Option(name, description), m_optionFn(func) { }
 
-	void on_draw(float x, float y, float w, const CRGBA& color) override;
+	void on_draw(float x, float y, float w, float h, const CRGBA& color) override;
 	void on_input(int key_code) override;
 };
 
@@ -129,7 +129,7 @@ public:
 
 	~SubMenu() = default;
 
-	void on_draw(float x, float y, float w, const CRGBA& color) override;
+	void on_draw(float x, float y, float w, float h, const CRGBA& color) override;
 	void on_input(int key_code) override;
 
 	auto add_option(std::shared_ptr<Option> option) -> void		{ m_options.push_back(std::move(option)); }
@@ -147,6 +147,24 @@ class Menu
 
 	CRect m_menuRect;
 
+	void update_visible_options() { // ghetto c+p codez by deepseek or chatgpt. sorry.
+		if (!m_visibleOptions.empty()) m_visibleOptions.clear();
+
+		for (const auto& item : m_options)
+		{
+			m_visibleOptions.push_back(item);
+			if (auto sub_menu = dynamic_cast<SubMenu*>(item.get()))
+			{
+				if (sub_menu->is_open())
+				{
+					for (const auto& sub_item : sub_menu->get_options()) {
+						m_visibleOptions.push_back(sub_item);
+					}
+				}
+			}
+		}
+	}
+
 public:
 	Menu();
 	~Menu() = default;
@@ -155,6 +173,24 @@ public:
 	bool on_input(int key_code);
 
 	void add_option(std::shared_ptr<Option> option) { m_options.push_back(std::move(option)); }
+	void remove_option(const std::string& name) {
+		static auto name_equals = [&name](const std::shared_ptr<Option>& option) {
+			return option->name() == name;
+		};
+
+		auto is_available = std::any_of(m_options.begin(), m_options.end(), name_equals);
+		if (!is_available) return; // we dont have any option with 'name', so do nothing
+
+		auto it = std::remove_if(m_options.begin(), m_options.end(), name_equals);
+		if (it != m_options.end()) {
+			m_options.erase(it, m_options.end()); // удаляем
+
+			update_visible_options(); // обновляем список видимых опций
+
+			if (m_selectedOptionIndex >= m_visibleOptions.size()) // корректируем индекс выбранного элемента
+				m_selectedOptionIndex = std::max(0, static_cast<int>(m_visibleOptions.size()) - 1);
+		}
+	}
 
 	bool is_open() const { return m_isOpen; }
 };
@@ -165,6 +201,7 @@ namespace menu_api
 
 	NEW_MENU_API void begin_submenu	(const std::string& name, const std::string& description);
 	NEW_MENU_API void end_submenu	();
+	NEW_MENU_API void remove_submenu(const std::string& name);
 	NEW_MENU_API void add_bool		(const std::string& name, bool& value, const std::string& description);
 	NEW_MENU_API void add_int		(const std::string& name, int& value, int min_value, int max_value, const std::string& description);
 	NEW_MENU_API void add_float		(const std::string& name, float& value, float min_value, float max_value, float step, const std::string& description);

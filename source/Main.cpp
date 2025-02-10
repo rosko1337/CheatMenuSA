@@ -10,6 +10,9 @@ using namespace plugin;
 
 // todo: present hook
 
+// hack: для костылей
+// undone: для незавершённого
+
 // credits:
 // https://github.com/zxvnme/zgui
 // https://github.com/DK22Pac/plugin-sdk
@@ -75,7 +78,7 @@ public:
 
 		if (g_isSamp)
 		{
-			preRenderWaterEvent.AddBefore(on_game_process); // gameProcessEvent patched in samp
+			preRenderWaterEvent.AddBefore(on_game_process); // gameProcessEvent is patched in samp? so we call our code right before ... // todo: ...
 			Events::drawAfterFadeEvent.AddAfter(on_draw); // drawHudEvent drawAfterFadeEvent
 
 			return;
@@ -87,6 +90,16 @@ public:
 
 	static void on_init()
 	{
+		g_Renderer		= std::make_shared<Renderer>();
+		g_Config		= std::make_shared<Config>();
+		g_Debug			= std::make_shared<Debug>();
+		g_Menu			= std::make_shared<Menu>();
+
+		g_MapFix		= std::make_shared<MapFix>();
+		g_Esp			= std::make_shared<Esp>();
+		g_Radar			= std::make_shared<Radar>();
+		g_PlayerCheats	= std::make_shared<PlayerCheats>();
+
 		// a la safe mode
 		if (g_isSamp)
 		{
@@ -100,7 +113,7 @@ public:
 		}
 
 		// useless tbh
-		g_watermarkSelected = plugin::RandomNumberInRange(0u, g_watermarkStrings.size());
+		g_watermarkSelected = plugin::RandomNumberInRange(0u, g_watermarkStrings.size() - 1);
 
 		// hook game funcs
 		g_hookGetWeaponInfo			 = safetyhook::create_inline(0x743C60, hooked::GetWeaponInfo);
@@ -116,16 +129,6 @@ public:
 		// hook game keyboard input. im too lazy to mess with wndproc tbh
 		g_originalInputEventHandler			= RsGlobal.keyboard.inputEventHandler;
 		RsGlobal.keyboard.inputEventHandler = hooked::inputEventHandler;
-
-		g_Renderer		= std::make_shared<Renderer>();
-		g_Config		= std::make_shared<Config>();
-		g_Debug			= std::make_shared<Debug>();
-		g_Menu			= std::make_shared<Menu>();
-
-		g_MapFix		= std::make_shared<MapFix>();
-		g_Esp			= std::make_shared<Esp>();
-		g_Radar			= std::make_shared<Radar>();
-		g_PlayerCheats	= std::make_shared<PlayerCheats>();
 	}
 
 	static void on_shutdown()
