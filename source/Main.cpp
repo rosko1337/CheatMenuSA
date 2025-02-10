@@ -78,7 +78,7 @@ public:
 
 		if (g_isSamp)
 		{
-			preRenderWaterEvent.AddBefore(on_game_process); // gameProcessEvent is patched in samp? so we call our code right before ... // todo: ...
+			preRenderWaterEvent.AddBefore(on_game_process); // call our shit right before CGame::Process (aka gameProcessEvent) ends
 			Events::drawAfterFadeEvent.AddAfter(on_draw); // drawHudEvent drawAfterFadeEvent
 
 			return;
@@ -90,11 +90,13 @@ public:
 
 	static void on_init()
 	{
+		// init base stuff
 		g_Renderer		= std::make_shared<Renderer>();
 		g_Config		= std::make_shared<Config>();
 		g_Debug			= std::make_shared<Debug>();
 		g_Menu			= std::make_shared<Menu>();
 
+		// init features
 		g_MapFix		= std::make_shared<MapFix>();
 		g_Esp			= std::make_shared<Esp>();
 		g_Radar			= std::make_shared<Radar>();
